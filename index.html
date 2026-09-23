@@ -20,7 +20,17 @@
   button{font:600 16px Inter,sans-serif;color:#fff;background:linear-gradient(180deg,#1b2552,#111838);border:1px solid var(--line);border-radius:12px;padding:13px 16px;cursor:pointer;transition:.15s}
   button:hover{border-color:var(--cyan);box-shadow:0 0 16px rgba(63,246,255,.3);transform:translateY(-1px)}
   button.primary{background:linear-gradient(180deg,#2466d8,#163c8c)}
-  .join{display:flex;gap:8px}
+  .rooms-h{font-size:13px;opacity:.75;text-align:center;margin-top:2px}
+  .rooms{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .room{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px}
+  .room b{font-family:'Russo One',sans-serif;font-weight:400;font-size:15px}
+  .room .rs{font-size:12px;font-weight:400;opacity:.8}
+  .room[data-st="free"] .rs{color:#7dffb0;opacity:1}
+  .room[data-st="waiting"]{border-color:#ffd27a;box-shadow:0 0 14px rgba(255,210,122,.25)}
+  .room[data-st="waiting"] .rs{color:#ffd27a;opacity:1}
+  .room[data-st="full"]{opacity:.55}
+  .room[data-st="full"] .rs{color:#ff8fa3}
+  .room[data-st="stale"] .rs{opacity:.6}
   .join input{flex:1;min-width:0;font:22px 'Russo One',sans-serif;text-align:center;letter-spacing:6px;text-transform:uppercase;color:#fff;background:#0a0f26;border:1px solid var(--line);border-radius:12px;padding:10px}
   .join input:focus{outline:none;border-color:var(--cyan)}
   #status{min-height:20px;color:#ffd27a;text-align:center}
@@ -28,7 +38,7 @@
   .help div{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
   .help b{font-family:'Russo One',sans-serif;font-weight:400;color:var(--cyan)}
   kbd{background:#1c2450;border-radius:4px;padding:0 5px;font-size:12px;border:1px solid var(--line)}
-  #lobby .code{font:clamp(56px,14vw,110px) 'Russo One',sans-serif;letter-spacing:12px;color:#fff;text-shadow:0 0 24px var(--cyan)}
+  #lobby .code{font:clamp(40px,10vw,80px) 'Russo One',sans-serif;letter-spacing:2px;color:#fff;text-shadow:0 0 24px var(--cyan);text-align:center}
   #hud{position:fixed;inset:0;pointer-events:none;z-index:5}
   #top{position:absolute;top:10px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;font-family:'Russo One',sans-serif}
   .sc{display:flex;align-items:center;gap:10px;font-size:34px;padding:4px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}
@@ -60,26 +70,28 @@
   <h1>AIR BRAWL</h1>
   <p class="tag">Аэрохоккей на круглой арене. Вытолкни соперника за край.</p>
   <div class="btns">
-    <button id="bHost" class="primary">🌐 Создать онлайн-комнату</button>
-    <div class="join"><input id="code" maxlength="4" placeholder="КОД" autocomplete="off"><button id="bJoin">Войти</button></div>
+    <div class="rooms-h">Онлайн: выберите комнату, друг выбирает ту же</div>
+    <div class="rooms">
+      <button class="room" data-room="1"><b>Комната 1</b><span class="rs">проверяем…</span></button>
+      <button class="room" data-room="2"><b>Комната 2</b><span class="rs">проверяем…</span></button>
+      <button class="room" data-room="3"><b>Комната 3</b><span class="rs">проверяем…</span></button>
+    </div>
     <button id="bLocal">👥 Двое за одной клавиатурой</button>
     <button id="bBot">🤖 Против бота</button>
   </div>
   <div id="status"></div>
   <div class="help">
-    <div><b>Управление</b><br><kbd>WASD</kbd>/<kbd>стрелки</kbd> — движение, <kbd>Пробел</kbd> — рывок<br>Вдвоём: синий <kbd>WASD</kbd>+<kbd>Пробел</kbd>, красный <kbd>стрелки</kbd>+<kbd>Enter</kbd><br><kbd>Esc</kbd> — в меню, <kbd>R</kbd> — реванш</div>
+    <div><b>Управление</b><br><kbd>WASD</kbd>/<kbd>стрелки</kbd> — движение, <kbd>Пробел</kbd> — рывок<br>Вдвоём: синий <kbd>WASD</kbd>+<kbd>Пробел</kbd>, красный <kbd>стрелки</kbd>+<kbd>Enter</kbd><br><kbd>Esc</kbd> — выйти, <kbd>R</kbd> — реванш</div>
     <div><b>Правила</b><br>Кто вылетел за край, тот проиграл раунд. Матч до 3 побед.<br>Шайба — снаряд: разгони её в соперника. Через 40 с арена начинает сжиматься.</div>
     <div><b>Бонусы</b><br>⚡ скорость · ⚓ масса (тебя не сдвинуть)<br>🛡️ щит (отражает удары) · 💥 ударная волна<br>Выпадают из ящиков, колонн и мобов.</div>
   </div>
 </div>
 
 <div id="lobby" class="overlay hidden">
-  <div style="opacity:.8">Код комнаты</div>
-  <div class="code" id="lobbyCode">····</div>
-  <div id="lobbyInfo" style="opacity:.8;text-align:center">Подключаемся к сигнальному серверу…</div>
+  <div class="code" id="lobbyRoom">Комната</div>
+  <div id="lobbyInfo" style="opacity:.8;text-align:center;max-width:420px">Подключаемся…</div>
   <div class="btns" style="width:min(320px,100%)">
-    <button id="bCopy">📋 Скопировать ссылку-приглашение</button>
-    <button id="bCancel">Отмена</button>
+    <button id="bCancel">Выйти из комнаты</button>
   </div>
 </div>
 
@@ -1018,7 +1030,6 @@ function updateHud(s, dt) {
 const keys = new Set(), dashCnt = { wasd: 0, arrows: 0, touch: 0 };
 const touch = { id: null, ox: 0, oy: 0, x: 0, y: 0 };
 addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT') { if (e.code === 'Enter') $('bJoin').click(); return; }
   keys.add(e.code);
   if (!e.repeat) {
     if (e.code === 'Space') dashCnt.wasd++;
@@ -1067,10 +1078,20 @@ $('dashBtn').addEventListener('pointerdown', e => { e.preventDefault(); dashCnt.
 /* =====================================================================
    GAME MODES & NETWORK
    ===================================================================== */
-let mode = null;      // 'local' | 'bot' | 'host' | 'guest' | null
-let sim = null, acc = 0, peer = null, conn = null, remoteInput = { mx: 0, mz: 0, dash: 0 }, remoteSeq = 0, remoteRtt = 0, snapSeq = 0;
-let netSendT = 0, netEvents = [], guestSnap = null, guestEvents = [], lastRecv = 0, linkType = '';
-const PREFIX = 'airbrawl-arena-v1-';
+let mode = null;      // 'local' | 'bot' | 'host' | 'guest' | 'lobby' | null
+let sim = null, acc = 0, peer = null, conn = null, fast = null, room = 0;
+let remoteInput = { mx: 0, mz: 0, dash: 0 }, remoteSeq = 0, remoteRtt = 0, snapSeq = 0;
+let netSendT = 0, guestSnap = null, guestEvents = [], lastRecv = 0, linkType = '', pingT = 0, rtt = 0;
+const PREFIX = 'airbrawl-v2-room-';
+const ROOMS = [1, 2, 3];
+const ICE = { iceServers: [
+  { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: ['turn:eu-0.turn.peerjs.com:3478', 'turn:us-0.turn.peerjs.com:3478'], username: 'peerjs', credential: 'peerjsp' },
+] };
+// debug: ?lag=200 adds artificial round-trip latency (applied on this side, both directions)
+const LAG = +new URLSearchParams(location.search).get('lag') || 0;
+const newPeer = id => new Peer(id, { config: ICE, debug: 0 });
 
 function status(t) { $('status').textContent = t; }
 function showScreen(which) {
@@ -1085,20 +1106,79 @@ function startMode(m) {
   clearView(); setNames(m); status(''); viewEvents = [];
   if (m !== 'guest') { sim = new Sim(); acc = 0; }
   else { sim = null; guestSnap = null; guestEvents = []; resetPrediction(); }
-  remoteSeq = 0; snapSeq = 0; linkType = '';
+  remoteSeq = 0; snapSeq = 0; remoteInput = { mx: 0, mz: 0, dash: 0 };
+  if (m === 'local' || m === 'bot') stopProbe();
   showScreen('game');
-  renderer.domElement.focus?.();
+}
+function dropLink() {
+  if (fast) { try { fast.close(); } catch {} fast = null; }
+  if (conn) { const c = conn; conn = null; try { c.close(); } catch {} }
+  linkType = '';
 }
 function toMenu(msg) {
   mode = null; sim = null; guestSnap = null; resetPrediction();
-  if (conn) { try { conn.close(); } catch {} conn = null; }
+  dropLink();
   if (peer) { try { peer.destroy(); } catch {} peer = null; }
+  room = 0;
   clearView(); showScreen('menu'); status(msg || ''); $('net').textContent = '';
-  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  startProbe();
 }
 function rematch() {
-  if (mode === 'guest') { if (guestSnap && guestSnap.ph === 'matchEnd') conn?.send({ rematch: 1 }); return; }
+  if (mode === 'guest') { if (guestSnap && guestSnap.ph === 'matchEnd') sendRel({ rematch: 1 }); return; }
   if (sim && sim.phase === 'matchEnd') sim.newMatch();
+}
+
+/* --- transport ---------------------------------------------------------
+   Two channels over one WebRTC connection:
+   - conn (PeerJS, reliable+ordered): handshake, game events, rematch;
+   - fast (raw, unordered, no retransmits): snapshots, inputs, ping.
+     Stale state is simply lost instead of queueing up behind a lost packet. */
+function sendFast(o) {
+  const go = () => {
+    if (fast && fast.readyState === 'open') { if (fast.bufferedAmount < 32768) fast.send(JSON.stringify(o)); }
+    else if (conn && conn.open) { try { conn.send(o); } catch {} }
+  };
+  LAG ? setTimeout(go, LAG / 2) : go();
+}
+function sendRel(o) {
+  const go = () => { if (conn && conn.open) { try { conn.send(o); } catch {} } };
+  LAG ? setTimeout(go, LAG / 2) : go();
+}
+function linkUp(c, onMsg) {
+  lastRecv = performance.now();
+  const recv = d => { const go = () => { if (conn !== c) return; lastRecv = performance.now(); onMsg(d); }; LAG ? setTimeout(go, LAG / 2) : go(); };
+  try {
+    fast = c.peerConnection.createDataChannel('fast', { negotiated: true, id: 100, ordered: false, maxRetransmits: 0 });
+    fast.onmessage = e => { try { recv(JSON.parse(e.data)); } catch {} };
+  } catch { fast = null; }
+  c.on('data', recv);
+  c.peerConnection.addEventListener('iceconnectionstatechange', () => {
+    if (conn === c && c.peerConnection.iceConnectionState === 'failed') {
+      if (mode === 'host' || mode === 'lobby') guestLeft('Связь с соперником оборвалась. Ждём нового соперника…');
+      else toMenu('Связь с хостом оборвалась.');
+    }
+  });
+  setTimeout(() => detectLink(c), 2000);
+}
+// Is WebRTC going peer-to-peer or through a TURN relay?
+async function detectLink(c) {
+  try {
+    const stats = await c.peerConnection.getStats();
+    let pair = null;
+    stats.forEach(r => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = stats.get(r.selectedCandidatePairId); });
+    if (!pair) stats.forEach(r => { if (r.type === 'candidate-pair' && r.nominated && r.state === 'succeeded') pair = r; });
+    const lc = pair && stats.get(pair.localCandidateId), rc = pair && stats.get(pair.remoteCandidateId);
+    if (lc) linkType = (lc.candidateType === 'relay' || rc?.candidateType === 'relay') ? 'через ретранслятор' : 'напрямую';
+  } catch {}
+}
+function netLabel(ms) {
+  const silent = performance.now() - lastRecv;
+  if (silent > 1500) return `⚠ связь прерывается… ${Math.floor(silent / 1000)} с`;
+  return `${ms < 90 ? '🟢' : ms < 180 ? '🟡' : '🔴'} пинг ${Math.round(ms)} мс${linkType ? ' · ' + linkType : ''}`;
+}
+// the signalling server is only needed to find each other; if it drops, reconnect quietly
+function keepSignalling(p) {
+  p.on('disconnected', () => setTimeout(() => { if (p === peer && !p.destroyed) { try { p.reconnect(); } catch {} } }, 1000));
 }
 
 /* ---------------------------------------------------------------------
@@ -1138,7 +1218,7 @@ function guestPredictTick(dt) {
     PRED.hist.push({ q, inp });
     if (PRED.hist.length > 180) PRED.hist.shift();
     predStep(PRED.p, inp, snap, pl => viewEvents.push({ k: 'dash', p: 1, x: pl.x, z: pl.z }));
-    try { conn.send({ i: inp, q, r: Math.round(rtt) }); } catch {}
+    sendFast({ i: inp, q, r: Math.round(rtt) });
   }
 }
 function reconcile(snap) {
@@ -1154,94 +1234,145 @@ function reconcile(snap) {
   }
   PRED.p = p;
 }
-// Is WebRTC going peer-to-peer or through a TURN relay?
-async function detectLink(c) {
-  try {
-    const stats = await c.peerConnection.getStats();
-    let pair = null;
-    stats.forEach(r => { if (r.type === 'transport' && r.selectedCandidatePairId) pair = stats.get(r.selectedCandidatePairId); });
-    if (!pair) stats.forEach(r => { if (r.type === 'candidate-pair' && r.nominated && r.state === 'succeeded') pair = r; });
-    const lc = pair && stats.get(pair.localCandidateId), rc = pair && stats.get(pair.remoteCandidateId);
-    if (lc) linkType = (lc.candidateType === 'relay' || rc?.candidateType === 'relay') ? 'через ретранслятор' : 'напрямую';
-  } catch {}
+
+/* --- rooms ------------------------------------------------------------- */
+function peerAvailable() { if (!window.Peer) { status('Не удалось загрузить сетевую библиотеку. Проверь интернет и обнови страницу.'); return false; } return true; }
+const ROOM_TXT = { free: 'свободна', waiting: 'ждёт соперника', full: 'идёт игра', unknown: 'проверяем…', stale: 'освобождается…' };
+const roomState = {};
+function setRoom(n, st) {
+  roomState[n] = st;
+  const b = document.querySelector(`.room[data-room="${n}"]`); if (!b) return;
+  b.dataset.st = st; b.querySelector('.rs').textContent = ROOM_TXT[st];
 }
-function netLabel(ms) { return `${ms < 90 ? '🟢' : ms < 180 ? '🟡' : '🔴'} пинг ${Math.round(ms)} мс${linkType ? ' · ' + linkType : ''}`; }
+ROOMS.forEach(n => setRoom(n, 'unknown'));
 
-function randomCode() { const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; return Array.from({ length: 4 }, () => A[Math.floor(Math.random() * A.length)]).join(''); }
-function peerAvailable() { if (!window.Peer) { status('Не удалось загрузить PeerJS — проверь интернет.'); return false; } return true; }
+// Room status probing: a throwaway peer asks each room's host what state it is in.
+let probePeer = null, probeTimer = null;
+function startProbe() {
+  if (!window.Peer || probePeer) return;
+  const pp = probePeer = newPeer();
+  pp.on('open', () => { probeAll(); probeTimer = setInterval(probeAll, 5000); });
+  pp.on('error', e => {
+    if (e.type !== 'peer-unavailable') return;
+    const n = ROOMS.find(r => String(e.message).includes(PREFIX + r));
+    if (n) setRoom(n, 'free');
+  });
+  pp.on('disconnected', () => setTimeout(() => { if (pp === probePeer && !pp.destroyed) { try { pp.reconnect(); } catch {} } }, 1000));
+}
+function stopProbe() {
+  clearInterval(probeTimer); probeTimer = null;
+  if (probePeer) { try { probePeer.destroy(); } catch {} probePeer = null; }
+}
+function probeAll() {
+  if (!probePeer || probePeer.destroyed || probePeer.disconnected) return;
+  for (const n of ROOMS) {
+    let c;
+    try { c = probePeer.connect(PREFIX + n, { metadata: { probe: 1 }, reliable: true }); } catch { continue; }
+    const t = setTimeout(() => { try { c.close(); } catch {} if (roomState[n] !== 'free') setRoom(n, 'stale'); }, 4500);
+    c.on('data', d => { if (d.st) setRoom(n, d.st); clearTimeout(t); setTimeout(() => { try { c.close(); } catch {} }, 100); });
+    c.on('error', () => {});
+  }
+}
 
-function hostGame(tries = 0) {
+function enterRoom(n) {
   if (!peerAvailable()) return;
-  audio();
-  const code = randomCode();
-  showScreen('lobby'); $('lobbyCode').textContent = code; $('lobbyInfo').textContent = 'Подключаемся к сигнальному серверу…';
-  mode = 'lobby';
-  peer = new Peer(PREFIX + code);
-  peer.on('open', () => { $('lobbyInfo').innerHTML = 'Отправь код или ссылку другу.<br>Ждём второго игрока…'; });
-  peer.on('connection', c => {
-    if (conn) { c.on('open', () => c.close()); return; }
+  audio(); stopProbe();
+  status(`Входим в комнату ${n}…`);
+  if (roomState[n] === 'waiting' || roomState[n] === 'full') joinRoom(n, false); else hostRoom(n, false);
+}
+
+function showLobby(text) {
+  mode = 'lobby'; sim = null; clearView(); showScreen('lobby');
+  $('lobbyRoom').textContent = `Комната ${room}`; $('lobbyInfo').textContent = text;
+}
+function guestLeft(text) {
+  dropLink();
+  if (peer && !peer.destroyed) showLobby(text); else toMenu(text);
+}
+function hostRoom(n, fromJoin) {
+  room = n;
+  const p = peer = newPeer(PREFIX + n);
+  keepSignalling(p);
+  p.on('open', () => { if (p === peer && !conn) showLobby('Ждём соперника. Друг должен выбрать эту же комнату в меню.'); });
+  p.on('connection', c => {
+    if (c.metadata?.probe) {
+      c.on('open', () => { try { c.send({ st: conn ? 'full' : 'waiting' }); } catch {} setTimeout(() => { try { c.close(); } catch {} }, 1500); });
+      return;
+    }
+    if (conn) { c.on('open', () => { try { c.send({ full: 1 }); } catch {} setTimeout(() => { try { c.close(); } catch {} }, 1500); }); return; }
     conn = c;
-    c.on('open', () => { startMode('host'); lastRecv = performance.now(); setTimeout(() => detectLink(c), 1500); });
-    c.on('data', d => {
-      lastRecv = performance.now();
-      if (d.i && d.q > remoteSeq) { remoteInput = d.i; remoteSeq = d.q; remoteRtt = d.r || 0; }
-      if (d.rematch && sim && sim.phase === 'matchEnd') sim.newMatch();
-      if (d.ping) c.send({ pong: d.ping });
+    const openT = setTimeout(() => { if (conn === c && !c.open) guestLeft('Соперник не смог подключиться. Ждём снова…'); }, 15000);
+    c.on('open', () => {
+      clearTimeout(openT);
+      c.send({ welcome: 1 });
+      linkUp(c, hostMsg);
+      startMode('host');
     });
-    c.on('close', () => { if (mode === 'host') toMenu('Соперник отключился.'); });
+    c.on('close', () => { if (conn === c) guestLeft('Соперник вышел. Ждём нового соперника…'); });
     c.on('error', () => {});
   });
-  peer.on('error', e => {
-    if (e.type === 'unavailable-id' && tries < 5) { peer.destroy(); peer = null; hostGame(tries + 1); return; }
-    if (mode === 'lobby' || mode === 'host') toMenu('Ошибка сети: ' + (e.type || e.message));
+  p.on('error', e => {
+    if (p !== peer) return;
+    if (e.type === 'unavailable-id') {           // someone is already hosting this room — join them
+      p.destroy(); peer = null;
+      if (fromJoin) toMenu(`Комната ${n} освобождается, попробуй через минуту.`);
+      else joinRoom(n, true);
+      return;
+    }
+    if (mode === 'host') return;                  // mid-game: the P2P link does not depend on the server
+    if (['network', 'server-error', 'socket-error', 'socket-closed', 'disconnected'].includes(e.type)) return; // keepSignalling retries
+    toMenu('Ошибка сети: ' + (e.type || e.message));
   });
-  $('bCopy').onclick = () => {
-    const link = location.href.split('#')[0] + '#' + code;
-    navigator.clipboard?.writeText(link).then(() => { $('bCopy').textContent = '✅ Ссылка скопирована'; setTimeout(() => $('bCopy').textContent = '📋 Скопировать ссылку-приглашение', 1500); });
-  };
 }
-let pingT = 0, rtt = 0;
-function joinGame() {
-  if (!peerAvailable()) return;
-  audio();
-  const code = $('code').value.trim().toUpperCase();
-  if (!/^[A-Z]{4}$/.test(code)) { status('Введи код из 4 букв'); return; }
-  status('Подключаемся…');
-  peer = new Peer();
-  let opened = false;
-  peer.on('open', () => {
-    conn = peer.connect(PREFIX + code, { reliable: false }); // unordered: a lost packet doesn't stall the ones after it
-    // debug: ?lag=200 adds artificial round-trip latency on the guest side
-    const LAG = +new URLSearchParams(location.search).get('lag') || 0;
-    if (LAG) { const raw = conn.send.bind(conn); conn.send = d => setTimeout(() => raw(d), LAG / 2); }
-    conn.on('open', () => { opened = true; startMode('guest'); lastRecv = performance.now(); setTimeout(() => detectLink(conn), 1500); });
-    const onData = d => {
-      lastRecv = performance.now();
-      if (d.s) {
-        // events are never dropped; state only moves forward (packets may arrive out of order)
-        if (d.s.E?.length) guestEvents.push(...d.s.E.filter(e => !(e.k === 'dash' && e.p === 1)));
-        if (guestEvents.length > 400) guestEvents.splice(0, guestEvents.length - 400);
-        if (!guestSnap || d.s.n > guestSnap.n) { guestSnap = d.s; reconcile(d.s); }
-      }
+function hostMsg(d) {
+  if (d.i && d.q > remoteSeq) { remoteInput = d.i; remoteSeq = d.q; remoteRtt = d.r || 0; }
+  if (d.ping) sendFast({ pong: d.ping });
+  if (d.rematch && sim && sim.phase === 'matchEnd') sim.newMatch();
+}
+function joinRoom(n, fromHost) {
+  room = n;
+  const p = peer = newPeer();
+  keepSignalling(p);
+  let started = false;
+  p.on('open', () => {
+    if (conn || p !== peer) return;               // 'open' fires again after a signalling reconnect
+    const c = conn = p.connect(PREFIX + n, { reliable: true, metadata: { join: 1 } });
+    setTimeout(() => {
+      if (started || conn !== c) return;
+      toMenu(c.open ? `Комната ${n} не отвечает — наверное, хост только что вышел. Подожди минуту или выбери другую.`
+                    : `Не удалось соединиться с комнатой ${n}. Возможно, сеть блокирует прямое соединение — попробуй ещё раз.`);
+    }, fromHost ? 8000 : 15000);
+    c.on('open', () => linkUp(c, d => {
+      if (d.welcome && !started) { started = true; startMode('guest'); }
+      if (d.full) toMenu(`В комнате ${n} уже идёт игра. Выбери другую.`);
+      if (d.s && (!guestSnap || d.s.n > guestSnap.n)) { guestSnap = d.s; reconcile(d.s); }
+      if (d.e) { guestEvents.push(...d.e.filter(e => !(e.k === 'dash' && e.p === 1))); if (guestEvents.length > 400) guestEvents.splice(0, guestEvents.length - 400); }
       if (d.pong) rtt = performance.now() - d.pong;
-    };
-    conn.on('data', d => LAG ? setTimeout(() => onData(d), LAG / 2) : onData(d));
-    conn.on('close', () => { if (mode === 'guest') toMenu('Хост отключился.'); });
-    setTimeout(() => { if (!opened && peer) toMenu('Не удалось подключиться к комнате ' + code); }, 12000);
+    }));
+    c.on('close', () => { if (conn === c) toMenu(started ? 'Хост вышел из комнаты.' : `Не удалось войти в комнату ${n}.`); });
+    c.on('error', () => {});
   });
-  peer.on('error', e => {
-    toMenu(e.type === 'peer-unavailable' ? `Комната ${code} не найдена` : 'Ошибка сети: ' + (e.type || e.message));
+  p.on('error', e => {
+    if (p !== peer) return;
+    if (e.type === 'peer-unavailable' && !started) {   // nobody hosts it (any more) — take the room
+      p.destroy(); peer = null; conn = null;
+      if (fromHost) toMenu(`Комната ${n} освобождается, попробуй через минуту.`);
+      else hostRoom(n, true);
+      return;
+    }
+    if (started) return;
+    if (['network', 'server-error', 'socket-error', 'socket-closed', 'disconnected'].includes(e.type)) return;
+    toMenu('Ошибка сети: ' + (e.type || e.message));
   });
 }
 
-$('bHost').onclick = () => hostGame();
-$('bJoin').onclick = joinGame;
+document.querySelectorAll('.room').forEach(b => b.onclick = () => enterRoom(+b.dataset.room));
 $('bLocal').onclick = () => startMode('local');
 $('bBot').onclick = () => startMode('bot');
 $('bCancel').onclick = () => toMenu('');
 $('bRematch').onclick = rematch;
 $('bMenu').onclick = () => toMenu('');
-if (/^#[A-Za-z]{4}$/.test(location.hash)) { $('code').value = location.hash.slice(1).toUpperCase(); status('Код приглашения подставлен — жми «Войти»'); }
+if (window.Peer) startProbe(); else ROOMS.forEach(n => setRoom(n, 'free'));
 
 /* =====================================================================
    MAIN LOOP
@@ -1263,16 +1394,18 @@ function tick() {
     viewEvents.push(...ev);
     if (viewEvents.length > 400) viewEvents.splice(0, viewEvents.length - 400);
     if (mode === 'host' && conn && conn.open) {
-      netEvents.push(...ev); netSendT += dt;
-      if (netSendT >= 1 / 60 - 0.002) { netSendT = 0; const s = sim.snap(); s.E = netEvents; s.n = ++snapSeq; s.a = remoteSeq; try { conn.send({ s }); } catch {} netEvents = []; }
+      if (ev.length) sendRel({ e: ev });
+      netSendT += dt;
+      const rate = linkType === 'через ретранслятор' ? 1 / 30 : 1 / 60;
+      if (netSendT >= rate - 0.002) { netSendT = 0; const s = sim.snap(); s.n = ++snapSeq; s.a = remoteSeq; sendFast({ s }); }
       $('net').textContent = netLabel(remoteRtt);
-      if (now - lastRecv > 8000) toMenu('Соединение потеряно.');
+      if (now - lastRecv > 15000) guestLeft('Соперник пропал: 15 секунд без связи. Ждём нового соперника…');
     }
   } else if (mode === 'guest' && conn && conn.open) {
     guestPredictTick(dt);
-    pingT += dt; if (pingT > 1) { pingT = 0; conn.send({ ping: performance.now() }); }
+    pingT += dt; if (pingT > 0.5) { pingT = 0; sendFast({ ping: performance.now() }); }
     $('net').textContent = netLabel(rtt);
-    if (now - lastRecv > 8000) toMenu('Соединение потеряно.');
+    if (now - lastRecv > 15000) toMenu('Хост пропал: 15 секунд без связи.');
   }
 }
 try {
@@ -1308,7 +1441,7 @@ addEventListener('resize', () => {
   renderer.setSize(innerWidth, innerHeight); composer.setSize(innerWidth, innerHeight);
   fx.mat.uniforms.scale.value = innerHeight / 2;
 });
-window.__game = { get sim() { return sim; }, get mode() { return mode; }, get pred() { return PRED; }, get snap() { return guestSnap; } };
+window.__game = { get sim() { return sim; }, get mode() { return mode; }, get pred() { return PRED; }, get snap() { return guestSnap; }, get fast() { return fast; }, get peer() { return peer; }, get probe() { return probePeer; }, rooms: roomState };
 </script>
 </body>
 </html>
